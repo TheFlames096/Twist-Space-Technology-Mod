@@ -1,9 +1,12 @@
 package com.Nxer.TwistSpaceTechnology.common.machine.singleBlock.hatch;
 
 import static com.Nxer.TwistSpaceTechnology.util.TextHandler.texter;
+import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.ModNameDesc;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.authorName_Nxer;
 import static gregtech.common.misc.WirelessNetworkManager.addEUToGlobalEnergyMap;
 import static gregtech.common.misc.WirelessNetworkManager.strongCheckOrAddUser;
+
+import java.util.UUID;
 
 import net.minecraft.util.EnumChatFormatting;
 
@@ -34,7 +37,6 @@ public class GT_Hatch_InfiniteWirelessDynamoHatch extends GT_MetaTileEntity_Wire
 
     // region IO info
     private String owner_uuid;
-    private String owner_name;
 
     @Override
     public long getMinimumStoredEU() {
@@ -64,9 +66,8 @@ public class GT_Hatch_InfiniteWirelessDynamoHatch extends GT_MetaTileEntity_Wire
             // UUID and username of the owner.
             this.owner_uuid = aBaseMetaTileEntity.getOwnerUuid()
                 .toString();
-            owner_name = aBaseMetaTileEntity.getOwnerName();
 
-            strongCheckOrAddUser(owner_uuid, owner_name);
+            strongCheckOrAddUser(UUID.fromString(owner_uuid));
         }
     }
 
@@ -77,7 +78,7 @@ public class GT_Hatch_InfiniteWirelessDynamoHatch extends GT_MetaTileEntity_Wire
         if (aBaseMetaTileEntity.isServerSide()) {
             // Every ticks_between_energy_addition ticks change the energy content of the machine.
             if (aTick % ticks_between_energy_addition == 0L) {
-                addEUToGlobalEnergyMap(owner_uuid, getEUVar());
+                addEUToGlobalEnergyMap(UUID.fromString(owner_uuid), getEUVar());
                 setEUVar(0L);
             }
         }
@@ -92,7 +93,7 @@ public class GT_Hatch_InfiniteWirelessDynamoHatch extends GT_MetaTileEntity_Wire
             EnumChatFormatting.GRAY + "Does not connect to wires. This block accepts EU into the network.",
             EnumChatFormatting.WHITE
                 + texter("Infinite output voltage limit.", "Description.InfiniteWirelessDynamoHatch.1"),
-            authorName_Nxer };
+            ModNameDesc, authorName_Nxer };
     }
 
     @Override

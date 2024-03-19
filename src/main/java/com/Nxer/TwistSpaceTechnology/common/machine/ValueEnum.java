@@ -132,6 +132,7 @@ public final class ValueEnum {
     // region Crystalline Infinitier
     public static final byte Mode_Default_CrystallineInfinitier = Config.Mode_Default_CrystallineInfinitier;
     public static final int SpeedMultiplier_AutoclaveMode_CrystallineInfinitier = Config.SpeedMultiplier_AutoclaveMode_CrystallineInfinitier;
+    public static final int SpeedMultiplier_ChemicalBath_CrystallineInfinitier = Config.SpeedMultiplier_ChemicalBath_CrystallineInfinitier;
     public static final int SpeedMultiplier_CrystallineInfinitierMode_CrystallineInfinitier = Config.SpeedMultiplier_CrystallineInfinitierMode_CrystallineInfinitier;
     public static final int ParallelMultiplier_CrystallineInfinitier = Config.ParallelMultiplier_CrystallineInfinitier;
     public static final byte FieldTier_EnablePerfectOverclock_CrystallineInfinitier = Config.FieldTier_EnablePerfectOverclock_CrystallineInfinitier;
@@ -203,8 +204,58 @@ public final class ValueEnum {
     public static final boolean MEG_AllowRotation = Config.MEG_Rotation;
     // endregion
 
+    // region Thermal Energy Devourer
+    public static final byte Mode_Default_ThermalEnergyDevourer = Config.Mode_Default_ThermalEnergyDevourer;
+    public static final int Parallel_HighSpeedMode_ThermalEnergyDevourer = Config.Parallel_HighSpeedMode_ThermalEnergyDevourer;
+    public static final int Parallel_HighParallelMode_ThermalEnergyDevourer = Config.Parallel_HighParallelMode_ThermalEnergyDevourer;
+    public static final int TickPerProgressing_WirelessMode_ThermalEnergyDevourer = Config.TickPerProgressing_WirelessMode_ThermalEnergyDevourer;
+
+    // endregion
+
+    // region Vacuum Filter Extractor
+    public static final byte Mode_Default_VacuumFilterExtractor = Config.Mode_Default_VacuumFilterExtractor;
+    public static final float EuModifier_VacuumFilterExtractor = Config.EuModifier_VacuumFilterExtractor;
+    // endregion
+
+    // region Bee Engineer
+    public static final double BE_pChance = Config.BE_pChance;
+    public static final double BE_pChanceEnhanced = Config.BE_pChanceEnhanced;
+    public static final int BE_pHoneyCost = Config.BE_pHoneyCost;
+    public static final int BE_pUUMCost = Config.BE_pUUMCost;
+    public static final int BE_pEachProcessTime = Config.BE_pEachProcessTime;
+    // endregion
+
+    // region Mega Macerator
+
+    public static final int BlockTier1Parallel_MegaMacerator = Config.BlockTier1Parallel_MegaMacerator;
+    public static final int BlockTier2Parallel_MegaMacerator = Config.BlockTier2Parallel_MegaMacerator;
+    public static final float SpeedBonus_MegaMacerator = Config.SpeedBonus_MegaMacerator;
+    public static final boolean EnablePerfectOverclock_MegaMacerator = Config.EnablePerfectOverclock_MegaMacerator;
+    // endregion
+
     // region Infinite Air Hatch
     public static final int ticksOfInfiniteAirHatchFillFull = (int) (20 * Config.secondsOfInfiniteAirHatchFillFull);
+    // endregion
+
+    // region Hephaestus' Atelier
+    public static final int ConsumeEutPerParallel_HephaestusAtelier = Config.ConsumeEutPerParallel_HephaestusAtelier;
+    public static final int ConsumeDuration_HephaestusAtelier = Config.ConsumeDuration_HephaestusAtelier;
+    public static final int ConsumeEuPerSmelting_HephaestusAtelier = Config.ConsumeEuPerSmelting_HephaestusAtelier;
+    public static final int DurationPerProcessing_T2Coil_Wireless_HephaestusAtelier = Config.DurationPerProcessing_T2Coil_Wireless_HephaestusAtelier;
+    public static final int DurationPerProcessing_T3Coil_Wireless_HephaestusAtelier = Config.DurationPerProcessing_T3Coil_Wireless_HephaestusAtelier;
+    // endregion
+
+    // region Deployed Nano Core
+    public static final int TickPerProgressing_WirelessMode_DeployedNanoCore = Config.TickPerProgressing_WirelessMode_DeployedNanoCore;
+    // endregion
+
+    // region Starcore Miner
+    public static final byte HeightValueLimit_StarcoreMiner = Config.HeightValueLimit_StarcoreMiner;
+    public static final int StackSizeOfEveryOreItemStackWhenMining_StarcoreMiner = Config.StackSizeOfEveryOreItemStackWhenMining_StarcoreMiner;
+    public static final int AmountOfOreStackPerMining_StarcoreMiner = Config.AmountOfOreStackPerMining_StarcoreMiner;
+    public static final int Eut_StarcoreMiner = Config.Eut_StarcoreMiner;
+    public static final int DurationPerMining_StarcoreMiner = Config.DurationPerMining_StarcoreMiner;
+
     // endregion
 
 }

@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import com.Nxer.TwistSpaceTechnology.common.machine.multiMachineClasses.GTCM_MultiMachineBase;
 import com.Nxer.TwistSpaceTechnology.common.machine.multiMachineClasses.processingLogics.GTCM_ProcessingLogic;
 import com.Nxer.TwistSpaceTechnology.util.TextLocalization;
+import com.Nxer.TwistSpaceTechnology.util.Utils;
 import com.gtnewhorizon.structurelib.structure.IItemSource;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
@@ -67,6 +68,27 @@ public class GT_TileEntity_MagneticDomainConstructor
     // region Processing Logic
     private byte mode = Mode_Default_MagneticDomainConstructor;
     private int rings = 1;
+    private int parallel = 1;
+    private float speedBonus = 1;
+
+    @Override
+    public void saveNBTData(NBTTagCompound aNBT) {
+        super.saveNBTData(aNBT);
+        aNBT.setByte("mode", mode);
+        aNBT.setInteger("rings", rings);
+        aNBT.setInteger("parallel", parallel);
+        aNBT.setFloat("speedBonus", speedBonus);
+
+    }
+
+    @Override
+    public void loadNBTData(final NBTTagCompound aNBT) {
+        super.loadNBTData(aNBT);
+        mode = aNBT.getByte("mode");
+        rings = aNBT.getInteger("rings");
+        parallel = aNBT.getInteger("parallel");
+        speedBonus = aNBT.getFloat("speedBonus");
+    }
 
     @Override
     protected ProcessingLogic createProcessingLogic() {
@@ -87,23 +109,16 @@ public class GT_TileEntity_MagneticDomainConstructor
     }
 
     public int getMaxParallelRecipes() {
-        return this.rings * Parallel_PerRing_MagneticDomainConstructor;
+        return parallel;
     }
 
     public float getSpeedBonus() {
-        return (float) Math.pow(
-            SpeedBonus_MultiplyPerTier_MagneticDomainConstructor,
-            GT_Utility.getTier(this.getAverageInputVoltage()));
+        return speedBonus;
     }
 
     @Override
     public RecipeMap<?> getRecipeMap() {
-        switch (mode) {
-            case 1:
-                return RecipeMaps.polarizerRecipes;
-            default:
-                return RecipeMaps.electroMagneticSeparatorRecipes;
-        }
+        return mode == 1 ? RecipeMaps.polarizerRecipes : RecipeMaps.electroMagneticSeparatorRecipes;
     }
 
     @Override
@@ -144,6 +159,11 @@ public class GT_TileEntity_MagneticDomainConstructor
 
             return false;
         }
+
+        parallel = (int) Math.min((long) rings * Parallel_PerRing_MagneticDomainConstructor, Integer.MAX_VALUE);
+        speedBonus = (float) Math
+            .pow(SpeedBonus_MultiplyPerTier_MagneticDomainConstructor, Utils.calculatePowerTier(getMaxInputEu()));
+
         return true;
     }
 
@@ -255,40 +275,43 @@ public class GT_TileEntity_MagneticDomainConstructor
      */
     @Override
     public IStructureDefinition<GT_TileEntity_MagneticDomainConstructor> getStructureDefinition() {
-        return StructureDefinition.<GT_TileEntity_MagneticDomainConstructor>builder()
-            .addShape(STRUCTURE_PIECE_MAIN, shapeMain)
-            .addShape(STRUCTURE_PIECE_MIDDLE, shapeMiddle)
-            .addShape(STRUCTURE_PIECE_END, shapeEnd)
-            .addElement('A', ofBlock(compactFusionCoil, 0))
-            .addElement('B', ofBlock(GregTech_API.sBlockCasings2, 8))
-            .addElement('C', ofBlock(GregTech_API.sBlockCasings8, 7))
-            .addElement(
-                'D', // Energy Hatch, Maintenance
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
-                    .atLeast(Energy.or(ExoticEnergy), Maintenance)
-                    .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
-                    .dot(1)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(10))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 10))
-            .addElement(
-                'E',
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
-                    .atLeast(InputBus, InputHatch)
-                    .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
-                    .dot(2)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 7))
-            .addElement(
-                'O',
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
-                    .atLeast(OutputBus, OutputHatch)
-                    .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
-                    .dot(3)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 7))
-            .addElement('F', ofFrame(Materials.NaquadahAlloy))
-            .addElement('G', ofFrame(Materials.TengamAttuned))
-            .build();
+        if (STRUCTURE_DEFINITION == null) {
+            STRUCTURE_DEFINITION = StructureDefinition.<GT_TileEntity_MagneticDomainConstructor>builder()
+                .addShape(STRUCTURE_PIECE_MAIN, shapeMain)
+                .addShape(STRUCTURE_PIECE_MIDDLE, shapeMiddle)
+                .addShape(STRUCTURE_PIECE_END, shapeEnd)
+                .addElement('A', ofBlock(compactFusionCoil, 0))
+                .addElement('B', ofBlock(GregTech_API.sBlockCasings2, 8))
+                .addElement('C', ofBlock(GregTech_API.sBlockCasings8, 7))
+                .addElement(
+                    'D', // Energy Hatch, Maintenance
+                    GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
+                        .atLeast(Energy.or(ExoticEnergy), Maintenance)
+                        .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
+                        .dot(1)
+                        .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(10))
+                        .buildAndChain(GregTech_API.sBlockCasings8, 10))
+                .addElement(
+                    'E',
+                    GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
+                        .atLeast(InputBus, InputHatch)
+                        .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
+                        .dot(2)
+                        .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
+                        .buildAndChain(GregTech_API.sBlockCasings8, 7))
+                .addElement(
+                    'O',
+                    GT_HatchElementBuilder.<GT_TileEntity_MagneticDomainConstructor>builder()
+                        .atLeast(OutputBus, OutputHatch)
+                        .adder(GT_TileEntity_MagneticDomainConstructor::addToMachineList)
+                        .dot(3)
+                        .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
+                        .buildAndChain(GregTech_API.sBlockCasings8, 7))
+                .addElement('F', ofFrame(Materials.NaquadahAlloy))
+                .addElement('G', ofFrame(Materials.TengamAttuned))
+                .build();
+        }
+        return STRUCTURE_DEFINITION;
     }
 
     private final int baseHorizontalOffSet = 7;
@@ -298,6 +321,8 @@ public class GT_TileEntity_MagneticDomainConstructor
     private static final String STRUCTURE_PIECE_MAIN = "mainMagneticDomainConstructor";
     private static final String STRUCTURE_PIECE_MIDDLE = "middleMagneticDomainConstructor";
     private static final String STRUCTURE_PIECE_END = "endMagneticDomainConstructor";
+
+    private static IStructureDefinition<GT_TileEntity_MagneticDomainConstructor> STRUCTURE_DEFINITION = null;
 
     /**
      * The first piece of Structure
@@ -456,19 +481,6 @@ public class GT_TileEntity_MagneticDomainConstructor
             .getCasingTextureForId(GT_Utility.getCasingTextureIndex(GregTech_API.sBlockCasings8, 10)) };
     }
 
-    @Override
-    public void saveNBTData(NBTTagCompound aNBT) {
-        super.saveNBTData(aNBT);
-        aNBT.setByte("mode", mode);
-        aNBT.setInteger("rings", rings);
-    }
-
-    @Override
-    public void loadNBTData(final NBTTagCompound aNBT) {
-        super.loadNBTData(aNBT);
-        mode = aNBT.getByte("mode");
-        rings = aNBT.getInteger("rings");
-    }
     // endregion
 
 }

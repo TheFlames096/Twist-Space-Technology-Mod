@@ -60,6 +60,8 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
 
     // region Processing Logic
     private int piece = 1;
+    private int parallel = 1;
+    private float speedBonus = 1;
     private HeatingCoilLevel coilLevel;
 
     public HeatingCoilLevel getCoilLevel() {
@@ -71,16 +73,34 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
     }
 
     @Override
+    public void saveNBTData(NBTTagCompound aNBT) {
+        super.saveNBTData(aNBT);
+
+        aNBT.setInteger("piece", piece);
+        aNBT.setInteger("parallel", parallel);
+        aNBT.setFloat("speedBonus", speedBonus);
+    }
+
+    @Override
+    public void loadNBTData(final NBTTagCompound aNBT) {
+        super.loadNBTData(aNBT);
+
+        piece = aNBT.getInteger("piece");
+        parallel = aNBT.getInteger("parallel");
+        speedBonus = aNBT.getFloat("speedBonus");
+    }
+
+    @Override
     protected boolean isEnablePerfectOverclock() {
         return false;
     }
 
     protected int getMaxParallelRecipes() {
-        return this.piece * Parallel_PerPiece_Silksong;
+        return parallel;
     }
 
     protected float getSpeedBonus() {
-        return (float) Math.pow(SpeedBonus_MultiplyPerCoilTier_Silksong, this.coilLevel.getLevel());
+        return speedBonus;
     }
 
     @Override
@@ -91,6 +111,7 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         repairMachine();
+        coilLevel = HeatingCoilLevel.None;
 
         this.piece = 0;
 
@@ -106,6 +127,9 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
             || !checkPiece(STRUCTURE_PIECE_END, horizontalOffSet, verticalOffSet, depthOffSet - piece * 2 - 2)) {
             return false;
         }
+
+        parallel = (int) Math.min((long) piece * Parallel_PerPiece_Silksong, Integer.MAX_VALUE);
+        speedBonus = (float) Math.pow(SpeedBonus_MultiplyPerCoilTier_Silksong, this.coilLevel.getTier());
 
         return true;
     }
@@ -192,46 +216,50 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
     private final int horizontalOffSet = 3;
     private final int verticalOffSet = 5;
     private final int depthOffSet = 0;
+    private static IStructureDefinition<GT_TileEntity_Silksong> STRUCTURE_DEFINITION = null;
 
     @Override
     public IStructureDefinition<GT_TileEntity_Silksong> getStructureDefinition() {
-        return StructureDefinition.<GT_TileEntity_Silksong>builder()
-            .addShape(STRUCTURE_PIECE_MAIN, shapeMain)
-            .addShape(STRUCTURE_PIECE_MIDDLE, shapeMiddle)
-            .addShape(STRUCTURE_PIECE_END, shapeEnd)
-            .addElement('A', ofBlock(GregTech_API.sBlockCasings1, 11))
-            .addElement('B', ofBlock(GregTech_API.sBlockCasings2, 15))
-            .addElement(
-                'C',
-                withChannel("coil", ofCoil(GT_TileEntity_Silksong::setCoilLevel, GT_TileEntity_Silksong::getCoilLevel)))
-            .addElement(
-                'D',
-                GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
-                    .atLeast(Maintenance, Energy.or(ExoticEnergy))
-                    .adder(GT_TileEntity_Silksong::addToMachineList)
-                    .dot(1)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(2))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 2))
-            .addElement('E', ofBlock(GregTech_API.sBlockCasings8, 7))
-            .addElement('F', ofBlock(pressureResistantWalls, 0))
-            .addElement(
-                'G',
-                GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
-                    .atLeast(OutputBus, OutputHatch)
-                    .adder(GT_TileEntity_Silksong::addToMachineList)
-                    .dot(2)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 7))
-            .addElement('H', ofFrame(Materials.Neutronium))
-            .addElement(
-                'I',
-                GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
-                    .atLeast(InputBus, InputHatch)
-                    .adder(GT_TileEntity_Silksong::addToMachineList)
-                    .dot(3)
-                    .casingIndex(((GT_Block_Casings1) GregTech_API.sBlockCasings1).getTextureIndex(11))
-                    .buildAndChain(GregTech_API.sBlockCasings1, 11))
-            .build();
+        if (STRUCTURE_DEFINITION == null) {
+            STRUCTURE_DEFINITION = StructureDefinition.<GT_TileEntity_Silksong>builder()
+                                                      .addShape(STRUCTURE_PIECE_MAIN, shapeMain)
+                                                      .addShape(STRUCTURE_PIECE_MIDDLE, shapeMiddle)
+                                                      .addShape(STRUCTURE_PIECE_END, shapeEnd)
+                                                      .addElement('A', ofBlock(GregTech_API.sBlockCasings1, 11))
+                                                      .addElement('B', ofBlock(GregTech_API.sBlockCasings2, 15))
+                                                      .addElement(
+                                                          'C',
+                                                          withChannel("coil", ofCoil(GT_TileEntity_Silksong::setCoilLevel, GT_TileEntity_Silksong::getCoilLevel)))
+                                                      .addElement(
+                                                          'D',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
+                                                                                .atLeast(Maintenance, Energy.or(ExoticEnergy))
+                                                                                .adder(GT_TileEntity_Silksong::addToMachineList)
+                                                                                .dot(1)
+                                                                                .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(2))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings8, 2))
+                                                      .addElement('E', ofBlock(GregTech_API.sBlockCasings8, 7))
+                                                      .addElement('F', ofBlock(pressureResistantWalls, 0))
+                                                      .addElement(
+                                                          'G',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
+                                                                                .atLeast(OutputBus, OutputHatch)
+                                                                                .adder(GT_TileEntity_Silksong::addToMachineList)
+                                                                                .dot(2)
+                                                                                .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(7))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings8, 7))
+                                                      .addElement('H', ofFrame(Materials.Neutronium))
+                                                      .addElement(
+                                                          'I',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_Silksong>builder()
+                                                                                .atLeast(InputBus, InputHatch)
+                                                                                .adder(GT_TileEntity_Silksong::addToMachineList)
+                                                                                .dot(3)
+                                                                                .casingIndex(((GT_Block_Casings1) GregTech_API.sBlockCasings1).getTextureIndex(11))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings1, 11))
+                                                      .build();
+        }
+        return STRUCTURE_DEFINITION;
     }
 
     /*
@@ -271,20 +299,6 @@ public class GT_TileEntity_Silksong extends GTCM_MultiMachineBase<GT_TileEntity_
     // endregion
 
     // region Overrides
-
-    @Override
-    public void saveNBTData(NBTTagCompound aNBT) {
-        super.saveNBTData(aNBT);
-
-        aNBT.setInteger("piece", piece);
-    }
-
-    @Override
-    public void loadNBTData(final NBTTagCompound aNBT) {
-        super.loadNBTData(aNBT);
-
-        piece = aNBT.getInteger("piece");
-    }
 
     @Override
     protected GT_Multiblock_Tooltip_Builder createTooltip() {

@@ -76,6 +76,7 @@ import gregtech.api.recipe.check.CheckRecipeResultRegistry;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_HatchElementBuilder;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
+import gregtech.api.util.GT_OverclockCalculator;
 import gregtech.api.util.GT_Recipe;
 import gregtech.api.util.GT_Utility;
 import mcp.mobius.waila.api.IWailaConfigHandler;
@@ -164,7 +165,7 @@ public class TST_IndistinctTentacle extends GTCM_MultiMachineBase<TST_Indistinct
                     + EnumChatFormatting.RESET
                     + ": "
                     + EnumChatFormatting.GOLD
-                    + tag.getLong("costingWirelessEUTemp")
+                    + GT_Utility.formatNumbers(tag.getLong("costingWirelessEUTemp"))
                     + EnumChatFormatting.RESET
                     + " EU");
 
@@ -256,6 +257,16 @@ public class TST_IndistinctTentacle extends GTCM_MultiMachineBase<TST_Indistinct
                 setEuModifier(getEuModifier());
                 setSpeedBonus(getSpeedBonus());
                 return super.process();
+            }
+
+            @Nonnull
+            @Override
+            protected GT_OverclockCalculator createOverclockCalculator(@Nonnull GT_Recipe recipe) {
+                if (isWirelessMode) {
+                    return GT_OverclockCalculator.ofNoOverclock(recipe);
+                } else {
+                    return super.createOverclockCalculator(recipe);
+                }
             }
 
         }.setMaxParallelSupplier(this::getLimitedMaxParallel);
@@ -399,6 +410,7 @@ public class TST_IndistinctTentacle extends GTCM_MultiMachineBase<TST_Indistinct
     private final int verticalOffSet = 17;
     private final int depthOffSet = 0;
     private static final String STRUCTURE_PIECE_MAIN = "mainIndistinctTentacle";
+    private static IStructureDefinition<TST_IndistinctTentacle> STRUCTURE_DEFINITION = null;
 
     @Override
     public void construct(ItemStack stackSize, boolean hintsOnly) {
@@ -479,56 +491,59 @@ L -> ofBlock...(gt.blockcasingsTT, 12, ...); // io
     // spotless:on
     @Override
     public IStructureDefinition<TST_IndistinctTentacle> getStructureDefinition() {
-        return StructureDefinition.<TST_IndistinctTentacle>builder()
-            .addShape(STRUCTURE_PIECE_MAIN, transpose(shapeMain))
-            .addElement(
-                'A',
-                withChannel(
-                    "glass",
-                    BorosilicateGlass.ofBoroGlass(
-                        (byte) 0,
-                        (byte) 1,
-                        Byte.MAX_VALUE,
-                        (te, t) -> te.glassTier = t,
-                        te -> te.glassTier)))
-            .addElement(
-                'B',
-                withChannel(
-                    "component",
-                    ofBlocksTiered(
-                        (block, meta) -> block == Loaders.componentAssemblylineCasing ? meta : -1,
-                        IntStream.range(0, 14)
-                            .mapToObj(i -> Pair.of(Loaders.componentAssemblylineCasing, i))
-                            .collect(Collectors.toList()),
-                        -2,
-                        (t, meta) -> t.tierComponentCasing = meta,
-                        t -> t.tierComponentCasing)))
-            .addElement('C', ofBlock(GregTech_API.sBlockCasings2, 9))
-            .addElement('D', ofBlock(GregTech_API.sBlockCasings9, 1))
-            .addElement(
-                'E',
-                GT_HatchElementBuilder.<TST_IndistinctTentacle>builder()
-                    .atLeast(Energy.or(ExoticEnergy))
-                    .adder(TST_IndistinctTentacle::addEnergyHatchOrExoticEnergyHatchToMachineList)
-                    .dot(1)
-                    .casingIndex(texturePage << 7)
-                    .buildAndChain(sBlockCasingsBA0, 12))
-            .addElement('F', ofBlock(sBlockCasingsTT, 7))
-            .addElement('G', ofBlock(sBlockCasingsTT, 9))
-            .addElement('H', ofBlock(sBlockCasingsTT, 10))
-            .addElement('I', ofBlock(sBlockCasingsTT, 12))
-            .addElement('J', ofBlock(sBlockCasingsTT, 13))
-            .addElement('K', ofChain(ofBlock(QuantumGlassBlock.INSTANCE, 0), ofBlock(sBlockCasingsTT, 13)))
-            .addElement(
-                'L',
-                GT_HatchElementBuilder.<TST_IndistinctTentacle>builder()
-                    .atLeast(InputBus, InputHatch, OutputBus)
-                    .adder(TST_IndistinctTentacle::addToMachineList)
-                    .dot(2)
-                    .casingIndex(1024 + 12)
-                    .buildAndChain(sBlockCasingsTT, 12))
-            .addElement('M', ofBlock(sBlockCasingsTT, 14))
-            .build();
+        if (STRUCTURE_DEFINITION == null) {
+            STRUCTURE_DEFINITION = StructureDefinition.<TST_IndistinctTentacle>builder()
+                .addShape(STRUCTURE_PIECE_MAIN, transpose(shapeMain))
+                .addElement(
+                    'A',
+                    withChannel(
+                        "glass",
+                        BorosilicateGlass.ofBoroGlass(
+                            (byte) 0,
+                            (byte) 1,
+                            Byte.MAX_VALUE,
+                            (te, t) -> te.glassTier = t,
+                            te -> te.glassTier)))
+                .addElement(
+                    'B',
+                    withChannel(
+                        "component",
+                        ofBlocksTiered(
+                            (block, meta) -> block == Loaders.componentAssemblylineCasing ? meta : -1,
+                            IntStream.range(0, 14)
+                                .mapToObj(i -> Pair.of(Loaders.componentAssemblylineCasing, i))
+                                .collect(Collectors.toList()),
+                            -2,
+                            (t, meta) -> t.tierComponentCasing = meta,
+                            t -> t.tierComponentCasing)))
+                .addElement('C', ofBlock(GregTech_API.sBlockCasings2, 9))
+                .addElement('D', ofBlock(GregTech_API.sBlockCasings9, 1))
+                .addElement(
+                    'E',
+                    GT_HatchElementBuilder.<TST_IndistinctTentacle>builder()
+                        .atLeast(Energy.or(ExoticEnergy))
+                        .adder(TST_IndistinctTentacle::addEnergyHatchOrExoticEnergyHatchToMachineList)
+                        .dot(1)
+                        .casingIndex(texturePage << 7)
+                        .buildAndChain(sBlockCasingsBA0, 12))
+                .addElement('F', ofBlock(sBlockCasingsTT, 7))
+                .addElement('G', ofBlock(sBlockCasingsTT, 9))
+                .addElement('H', ofBlock(sBlockCasingsTT, 10))
+                .addElement('I', ofBlock(sBlockCasingsTT, 12))
+                .addElement('J', ofBlock(sBlockCasingsTT, 13))
+                .addElement('K', ofChain(ofBlock(QuantumGlassBlock.INSTANCE, 0), ofBlock(sBlockCasingsTT, 13)))
+                .addElement(
+                    'L',
+                    GT_HatchElementBuilder.<TST_IndistinctTentacle>builder()
+                        .atLeast(InputBus, InputHatch, OutputBus)
+                        .adder(TST_IndistinctTentacle::addToMachineList)
+                        .dot(2)
+                        .casingIndex(1024 + 12)
+                        .buildAndChain(sBlockCasingsTT, 12))
+                .addElement('M', ofBlock(sBlockCasingsTT, 14))
+                .build();
+        }
+        return STRUCTURE_DEFINITION;
     }
 
     // endregion

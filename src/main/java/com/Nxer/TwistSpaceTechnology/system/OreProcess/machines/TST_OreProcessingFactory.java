@@ -74,6 +74,7 @@ import gregtech.api.util.GT_HatchElementBuilder;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_OverclockCalculator;
 import gregtech.api.util.GT_Recipe;
+import gregtech.api.util.GT_Utility;
 import mcp.mobius.waila.api.IWailaConfigHandler;
 import mcp.mobius.waila.api.IWailaDataAccessor;
 
@@ -132,7 +133,7 @@ public class TST_OreProcessingFactory extends GTCM_MultiMachineBase<TST_OreProce
             currentTip.add(
                 EnumChatFormatting.AQUA + texter("Current Using EU: ", "Waila.TST_OreProcessingFactory.2")
                     + EnumChatFormatting.GOLD
-                    + tag.getLong("usingEU")
+                    + GT_Utility.formatNumbers(tag.getLong("usingEU"))
                     + EnumChatFormatting.RESET
                     + " EU");
         }
@@ -160,6 +161,7 @@ public class TST_OreProcessingFactory extends GTCM_MultiMachineBase<TST_OreProce
         for (ItemStack items : inputs) {
             boolean hasNotFound = true;
             for (GT_Recipe recipe : recipeMap.getAllRecipes()) {
+                if (recipe.mInputs == null || recipe.mInputs.length < 1) continue;
                 if (metaItemEqual(recipe.mInputs[0], items) && items.stackSize >= recipe.mInputs[0].stackSize) {
                     // found the recipe
                     hasNotFound = false;
@@ -209,7 +211,7 @@ public class TST_OreProcessingFactory extends GTCM_MultiMachineBase<TST_OreProce
         if (outputs.isEmpty()) return CheckRecipeResultRegistry.NO_RECIPE;
 
         usingEU = EUt * OreProcessRecipeDuration;
-        if (!addEUToGlobalEnergyMap(ownerUUID, usingEU)) {
+        if (!addEUToGlobalEnergyMap(ownerUUID, -usingEU)) {
             return CheckRecipeResultRegistry.insufficientPower(usingEU);
         }
         // set these to machine outputs
@@ -347,6 +349,7 @@ public class TST_OreProcessingFactory extends GTCM_MultiMachineBase<TST_OreProce
             protected GT_OverclockCalculator createOverclockCalculator(@Nonnull GT_Recipe recipe) {
                 return GT_OverclockCalculator.ofNoOverclock(recipe);
             }
+
         }.setMaxParallel(Integer.MAX_VALUE);
     }
 
@@ -383,10 +386,11 @@ public class TST_OreProcessingFactory extends GTCM_MultiMachineBase<TST_OreProce
     }
 
     private boolean consumeFluids() {
-        if (getStoredFluids() == null || getStoredFluids().isEmpty()) return false;
+        ArrayList<FluidStack> storedFluids = getStoredFluids();
+        if (storedFluids == null || storedFluids.isEmpty()) return false;
 
         int amount = LubricantCost;
-        for (FluidStack fluid : getStoredFluids()) {
+        for (FluidStack fluid : storedFluids) {
             if (fluid.getFluid() == Materials.Lubricant.mFluid) {
                 if (fluid.amount >= amount) {
                     fluid.amount -= amount;

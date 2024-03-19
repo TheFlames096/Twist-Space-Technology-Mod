@@ -1,7 +1,9 @@
 package com.Nxer.TwistSpaceTechnology.util;
 
 import static com.Nxer.TwistSpaceTechnology.TwistSpaceTechnology.isInDevMode;
+import static net.minecraft.util.StatCollector.translateToLocalFormatted;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,10 +18,13 @@ import gregtech.api.metatileentity.MetaTileEntity;
 
 public final class Utils {
 
+    public static final double LOG2 = Math.log(2);
+    public static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1);
+
     // region about ItemStack
     public static boolean metaItemEqual(ItemStack a, ItemStack b) {
-        if (a == b) return true;
         if (a == null || b == null) return false;
+        if (a == b) return true;
         return a.getItem() == b.getItem() && a.getItemDamage() == b.getItemDamage();
     }
 
@@ -122,6 +127,24 @@ public final class Utils {
         return a.getFluid() == b.getFluid();
     }
 
+    public static FluidStack setStackSize(FluidStack fluidStack, int amount) {
+        if (fluidStack == null) return null;
+        if (amount < 0) {
+            TwistSpaceTechnology.LOG
+                .info("Error! Trying to set a item stack size lower than zero! " + fluidStack + " to amount " + amount);
+            return fluidStack;
+        }
+        fluidStack.amount = amount;
+        return fluidStack;
+    }
+
+    // endregion
+
+    // region About Text
+    public static String i18n(String key) {
+        return translateToLocalFormatted(key);
+    }
+
     // endregion
 
     // region Rewrites
@@ -206,6 +229,10 @@ public final class Utils {
     public static long max(long... values) {
         Arrays.sort(values);
         return values[values.length - 1];
+    }
+
+    public static double calculatePowerTier(double voltage) {
+        return 1 + Math.max(0, (Math.log(voltage) / LOG2) - 5) / 2;
     }
 
 }

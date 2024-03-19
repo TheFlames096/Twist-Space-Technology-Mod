@@ -15,7 +15,6 @@ import static gregtech.api.enums.GT_HatchElement.Energy;
 import static gregtech.api.enums.GT_HatchElement.ExoticEnergy;
 import static gregtech.api.enums.GT_HatchElement.InputBus;
 import static gregtech.api.enums.GT_HatchElement.InputHatch;
-import static gregtech.api.enums.GT_HatchElement.Maintenance;
 import static gregtech.api.enums.GT_HatchElement.OutputBus;
 import static gregtech.api.enums.GT_HatchElement.OutputHatch;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_LARGE_CHEMICAL_REACTOR;
@@ -143,6 +142,7 @@ public class GT_TileEntity_IntensifyChemicalDistorter
     private final int horizontalOffSet = 5;
     private final int verticalOffSet = 12;
     private final int depthOffSet = 0;
+    private static IStructureDefinition<GT_TileEntity_IntensifyChemicalDistorter> STRUCTURE_DEFINITION = null;
 
     /**
      * <li>'s' = Stainless casing ;
@@ -194,50 +194,47 @@ public class GT_TileEntity_IntensifyChemicalDistorter
      */
     @Override
     public IStructureDefinition<GT_TileEntity_IntensifyChemicalDistorter> getStructureDefinition() {
-        /* index of stainless steal casing */
-        /* preview channel of blueprint */
-        /* index of chem inert casing */
-        /* preview channel of blueprint */
         // Structure def
-        IStructureDefinition<GT_TileEntity_IntensifyChemicalDistorter> structure = StructureDefinition
-            .<GT_TileEntity_IntensifyChemicalDistorter>builder()
-            .addShape(STRUCTURE_PIECE_MAIN, transpose(shape))
-            .addElement('s', ofBlock(GregTech_API.sBlockCasings4, 1))
-            .addElement('v', ofBlock(GregTech_API.sBlockCasings8, 0))
-            .addElement('p', ofBlock(GregTech_API.sBlockCasings8, 1))
-            .addElement(
-                'c',
-                withChannel(
-                    "coil",
-                    ofCoil(
-                        GT_TileEntity_IntensifyChemicalDistorter::setCoilLevel,
-                        GT_TileEntity_IntensifyChemicalDistorter::getCoilLevel)))
-            .addElement(
-                'h',
-                GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
-                    .atLeast(InputHatch, OutputHatch)
-                    .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
-                    .casingIndex(176)/* index of stainless steal casing */
-                    .dot(1)/* preview channel of blueprint */
-                    .buildAndChain(GregTech_API.sBlockCasings8, 0))
-            .addElement(
-                'b',
-                GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
-                    .atLeast(InputBus, OutputBus, Maintenance)
-                    .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
-                    .casingIndex(49)/* index of chem inert casing */
-                    .dot(2)/* preview channel of blueprint */
-                    .buildAndChain(GregTech_API.sBlockCasings4, 1))
-            .addElement(
-                'e',
-                GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
-                    .atLeast(Energy.or(ExoticEnergy))
-                    .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
-                    .casingIndex(11)
-                    .dot(3)
-                    .buildAndChain(GregTech_API.sBlockCasings1, 11))
-            .build();
-        return structure;
+        if (STRUCTURE_DEFINITION == null) {
+            STRUCTURE_DEFINITION = StructureDefinition.<GT_TileEntity_IntensifyChemicalDistorter>builder()
+                .addShape(STRUCTURE_PIECE_MAIN, transpose(shape))
+                .addElement('s', ofBlock(GregTech_API.sBlockCasings4, 1))
+                .addElement('v', ofBlock(GregTech_API.sBlockCasings8, 0))
+                .addElement('p', ofBlock(GregTech_API.sBlockCasings8, 1))
+                .addElement(
+                    'c',
+                    withChannel(
+                        "coil",
+                        ofCoil(
+                            GT_TileEntity_IntensifyChemicalDistorter::setCoilLevel,
+                            GT_TileEntity_IntensifyChemicalDistorter::getCoilLevel)))
+                .addElement(
+                    'h',
+                    GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
+                        .atLeast(InputHatch, OutputHatch)
+                        .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
+                        .casingIndex(176)/* index of stainless steal casing */
+                        .dot(1)/* preview channel of blueprint */
+                        .buildAndChain(GregTech_API.sBlockCasings8, 0))
+                .addElement(
+                    'b',
+                    GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
+                        .atLeast(InputBus, OutputBus)
+                        .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
+                        .casingIndex(49)/* index of chem inert casing */
+                        .dot(2)/* preview channel of blueprint */
+                        .buildAndChain(GregTech_API.sBlockCasings4, 1))
+                .addElement(
+                    'e',
+                    GT_HatchElementBuilder.<GT_TileEntity_IntensifyChemicalDistorter>builder()
+                        .atLeast(Energy.or(ExoticEnergy))
+                        .adder(GT_TileEntity_IntensifyChemicalDistorter::addToMachineList)
+                        .casingIndex(11)
+                        .dot(3)
+                        .buildAndChain(GregTech_API.sBlockCasings1, 11))
+                .build();
+        }
+        return STRUCTURE_DEFINITION;
     }
 
     public void setCoilLevel(HeatingCoilLevel aCoilLevel) {
@@ -306,6 +303,7 @@ public class GT_TileEntity_IntensifyChemicalDistorter
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         repairMachine();
+        coilLevel = HeatingCoilLevel.None;
         // this.casingAmountActual = 0; // re-init counter
         return checkPiece(STRUCTURE_PIECE_MAIN, horizontalOffSet, verticalOffSet, depthOffSet);
     }

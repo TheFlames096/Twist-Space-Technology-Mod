@@ -7,7 +7,6 @@ import net.minecraft.item.ItemStack;
 import com.Nxer.TwistSpaceTechnology.util.Utils;
 
 import gregtech.api.util.GT_Log;
-import gregtech.api.util.GT_OreDictUnificator;
 
 public enum GTCMItemList {
 
@@ -153,7 +152,8 @@ public enum GTCMItemList {
     Rune_of_Erelong,
     Rune_of_Ether,
     Rune_of_Perdition,
-
+    PowerChair,
+    PrimitiveMansSpaceTimeDistortionDevice,
     // Machines
 
     IntensifyChemicalDistorter,
@@ -177,10 +177,25 @@ public enum GTCMItemList {
     MegaEggGenerator,
     AstralComputingArray,
 
+    StellarMaterialSiphon,
+    ElvenWorkshop,
+    HyperSpacetimeTransformer,
     superCleanRoom,
     BiosphereIII,
     AdvancedMegaOilCracker,
     IndistinctTentacle,
+    ThermalEnergyDevourer,
+    VacuumFilterExtractor,
+    LargeSteamForgeHammer,
+    LargeSteamAlloySmelter,
+    EyeOfWood,
+    BeeEngineer,
+    MegaMacerator,
+    HephaestusAtelier,
+    DeployedNanoCore,
+    CoreDeviceOfHumanPowerGenerationFacility,
+    StarcoreMiner,
+    Disassembler,
 
     // MAX
     HighDimensionalExtend,
@@ -205,19 +220,16 @@ public enum GTCMItemList {
     DSPLauncher,
     DSPReceiver,
     ArtificialStar,
-    StellarMaterialSiphon,
-    ElvenWorkshop,
-    HyperSpacetimeTransformer,
 
     // single block Machines
     InfiniteAirHatch,
     ManaHatch,
     InfManaHatch,
     InfiniteWirelessDynamoHatch,
+    DualInputBuffer_IV,
     DualInputBuffer_LuV,
     DualInputBuffer_ZPM,
     DualInputBuffer_UV,
-    DualInputBuffer_UHV,
     BufferedEnergyHatchLV,
     BufferedEnergyHatchMV,
     BufferedEnergyHatchHV,
@@ -232,6 +244,8 @@ public enum GTCMItemList {
     BufferedEnergyHatchUMV,
     BufferedEnergyHatchUXV,
     BufferedEnergyHatchMAX,
+    DebugUncertaintyHatch,
+    LaserSmartNode,
 
     // Blocks
 
@@ -287,7 +301,9 @@ public enum GTCMItemList {
     NuclearReactorStructure0,
     NuclearReactorStructure1,
     NuclearReactorStructure2,
-    NuclearReactorStructure3;
+    NuclearReactorStructure3,
+    FackRackHatch,
+    RealRackHatch;
 
     // region Member Variables
 
@@ -329,7 +345,7 @@ public enum GTCMItemList {
             new NullPointerException().printStackTrace(GT_Log.out);
             return Utils.copyAmount(aAmount, TestItem0.get(1));
         }
-        return Utils.copyAmount(aAmount, GT_OreDictUnificator.get(mStack));
+        return Utils.copyAmount(aAmount, mStack);
     }
 
     public GTCMItemList set(Item aItem) {

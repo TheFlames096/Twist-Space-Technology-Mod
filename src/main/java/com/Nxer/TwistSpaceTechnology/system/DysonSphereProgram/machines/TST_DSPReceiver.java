@@ -24,6 +24,8 @@ import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPRec
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_02_04;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_02_05;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_02_06;
+import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_02_07;
+import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_02_08;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_03;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_04;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.Tooltip_DSPReceiver_05;
@@ -37,8 +39,11 @@ import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.infoText_Curre
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.infoText_CurrentStellarCoefficient;
 import static com.Nxer.TwistSpaceTechnology.util.TextLocalization.textUseBlueprint;
 import static com.Nxer.TwistSpaceTechnology.util.Utils.metaItemEqual;
+import static com.Nxer.TwistSpaceTechnology.util.Utils.setStackSize;
+import static com.github.technus.tectech.thing.CustomItemList.astralArrayFabricator;
 import static com.github.technus.tectech.thing.casing.TT_Container_Casings.sBlockCasingsTT;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofBlock;
+import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofChain;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.transpose;
 import static gregtech.api.enums.GT_HatchElement.InputBus;
 import static gregtech.api.enums.GT_HatchElement.OutputBus;
@@ -47,6 +52,7 @@ import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_DTPF_ON;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FUSION1_GLOW;
 import static gregtech.api.util.GT_StructureUtility.ofFrame;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -117,6 +123,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
 
     // region Processing Logic
 
+    private static ItemStack ASTRAL_ARRAY_FABRICATOR;
     private String ownerName; // init when load world
     private UUID ownerUUID; // init when load world
     private byte mode = 0;
@@ -125,6 +132,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
     private long storageEU = 0;
     private long gravitationalLensTime = 0;
     private boolean wirelessMode = true;
+    private int astralArrayOverloadMultiplier = 1;
     private int dimID; // init when load world
     private double stellarAndPlanetCoefficient = 0;
     private DSP_DataCell dspDataCell; // init when load world
@@ -139,7 +147,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
     public String[] getInfoData() {
         // spotless:off
         String[] origin = super.getInfoData();
-        String[] ret = new String[origin.length + 6];
+        String[] ret = new String[origin.length + 7];
         System.arraycopy(origin, 0, ret, 0, origin.length);
         ret[origin.length] = EnumChatFormatting.GOLD + texter("Generating EU/t: ", "TST_DSPReceiver.getInfoData.01")
             + EnumChatFormatting.RESET
@@ -149,9 +157,10 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
             + EnumChatFormatting.RESET
             + usedPowerPoint;
         ret[origin.length + 2] = EnumChatFormatting.GOLD + texter("Gravitational Lens Intensify Mode remaining time: ","TST_DSPReceiver.getInfoData.03") + EnumChatFormatting.RESET + (gravitationalLensTime/20) + " s";
-        ret[origin.length + 3] = EnumChatFormatting.GOLD + infoText_CurrentStellarCoefficient + EnumChatFormatting.RESET + dspDataCell.getGalaxy() + " -> " + EnumChatFormatting.YELLOW + dspDataCell.getGalaxy().stellarCoefficient;
-        ret[origin.length + 4] = EnumChatFormatting.GOLD + infoText_CurrentPlanetCoefficient + EnumChatFormatting.RESET + DSP_Planet.getPlanetFromDimID(dimID) + " -> " + EnumChatFormatting.YELLOW + DSP_Planet.getPlanetaryCoefficientWithDimID(dimID);
-        ret[origin.length + 5] = EnumChatFormatting.GOLD + texter("Dyson Sphere Data: ", "DSPDataCell.getInfoData")
+        ret[origin.length + 3] = EnumChatFormatting.GOLD + texter("Overload Multiplier: ", "TST_DSPReceiver.getInfoData.04") + EnumChatFormatting.RESET + astralArrayOverloadMultiplier;
+        ret[origin.length + 4] = EnumChatFormatting.GOLD + infoText_CurrentStellarCoefficient + EnumChatFormatting.RESET + dspDataCell.getGalaxy() + " -> " + EnumChatFormatting.YELLOW + dspDataCell.getGalaxy().stellarCoefficient;
+        ret[origin.length + 5] = EnumChatFormatting.GOLD + infoText_CurrentPlanetCoefficient + EnumChatFormatting.RESET + DSP_Planet.getPlanetFromDimID(dimID) + " -> " + EnumChatFormatting.YELLOW + DSP_Planet.getPlanetaryCoefficientWithDimID(dimID);
+        ret[origin.length + 6] = EnumChatFormatting.GOLD + texter("Dyson Sphere Data: ", "DSPDataCell.getInfoData")
             + EnumChatFormatting.RESET
             + dspDataCell;
         return ret;
@@ -167,7 +176,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
             currentTip.add(
                 EnumChatFormatting.AQUA + texter("Energy Receiving: ", "Waila.TST_DSPReceiver.1")
                     + EnumChatFormatting.GOLD
-                    + tag.getLong("TickEU")
+                    + GT_Utility.formatNumbers(tag.getLong("TickEU"))
                     + EnumChatFormatting.RESET
                     + " EU/t");
         }
@@ -230,14 +239,24 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
         ItemStack controllerStack = getControllerSlot();
         long maxPowerPointLimit = dspDataCell.getMaxDSPPowerPoint();
         long canUse = dspDataCell.getDSPPowerPointCanUse();
-        if (controllerStack != null && controllerStack.getItem() instanceof GT_IntegratedCircuit_Item) {
+
+        if (controllerStack == null) {
+            // normal
+            astralArrayOverloadMultiplier = 1;
+            return Math.min(DSP_Values.maxPowerPointPerReceiver, canUse);
+        } else if (controllerStack.getItem() instanceof GT_IntegratedCircuit_Item) {
+            // use integrated circuit to limit
             double multiplier = Math
                 .min(1, ((double) controllerStack.getItemDamage()) / ((double) controllerStack.stackSize));
             long limited = (long) (multiplier * maxPowerPointLimit);
+            astralArrayOverloadMultiplier = 1;
             return Math.min(DSP_Values.maxPowerPointPerReceiver, Math.min(limited, canUse));
-        } else if (controllerStack == null) {
-            return Math.min(DSP_Values.maxPowerPointPerReceiver, canUse);
+        } else if (metaItemEqual(controllerStack, ASTRAL_ARRAY_FABRICATOR) && controllerStack.stackSize >= 1) {
+            // use Astral Array Fabricator to overload over max input limitation
+            astralArrayOverloadMultiplier = controllerStack.stackSize * 2;
+            return Math.min(DSP_Values.maxPowerPointPerReceiver * astralArrayOverloadMultiplier, canUse);
         } else {
+            astralArrayOverloadMultiplier = 1;
             return 0;
         }
     }
@@ -268,6 +287,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
             dspDataCell.setUsedPowerPointUnsafely(0);
         }
         usedPowerPoint = 0;
+        astralArrayOverloadMultiplier = 1;
     }
 
     @Override
@@ -277,15 +297,48 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
     }
 
     private void syncDSPData() {
-        if (this.dataSyncFlag == dspDataCell.getDataSyncFlag()) return;
-        this.stopUsingDSP();
-        this.startUsingDSP();
+        if (this.dataSyncFlag != dspDataCell.getDataSyncFlag()) {
+            this.stopUsingDSP();
+            this.startUsingDSP();
+            return;
+        }
+
+        final ItemStack controllerSlot = getControllerSlot();
+        if (astralArrayOverloadMultiplier > 1) {
+            if (controllerSlot == null || !metaItemEqual(controllerSlot, ASTRAL_ARRAY_FABRICATOR)
+                || controllerSlot.stackSize * 2 != astralArrayOverloadMultiplier) {
+                this.stopUsingDSP();
+                this.startUsingDSP();
+            }
+        } else if (controllerSlot != null && metaItemEqual(controllerSlot, ASTRAL_ARRAY_FABRICATOR)) {
+            this.stopUsingDSP();
+            this.startUsingDSP();
+        }
+
     }
 
     @NotNull
     @Override
     public CheckRecipeResult checkProcessing() {
         checkGravitationalLensInput();
+        this.syncDSPData();
+
+        if (mode == 0) {
+            if (wirelessMode) {
+                // Generate EU directly
+                if (this.storageEU > 0) {
+                    addEUToGlobalEnergyMap(ownerUUID.toString(), this.storageEU);
+                    this.storageEU = 0;
+                }
+            }
+        } else if (mode == 1) {
+            // Generate Photon per int.MAX EU
+            if (storageEU >= EUPerCriticalPhoton) {
+                int amount = (int) (storageEU / EUPerCriticalPhoton);
+                mOutputItems = new ItemStack[] { setStackSize(CriticalPhoton.get(1), amount) };
+                storageEU -= EUPerCriticalPhoton * amount;
+            }
+        }
         mMaxProgresstime = 128;
         return CheckRecipeResultRegistry.GENERATING;
     }
@@ -300,7 +353,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
 
     @Override
     public boolean onRunningTick(ItemStack aStack) {
-        if (wirelessMode) {
+        if (mode == 1 || wirelessMode) {
             this.storageEU += this.generateTickEU();
         } else {
             addEnergyOutput(this.generateTickEU());
@@ -311,6 +364,9 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
     @Override
     public void onFirstTick(IGregTechTileEntity aBaseMetaTileEntity) {
         super.onFirstTick(aBaseMetaTileEntity);
+        if (ASTRAL_ARRAY_FABRICATOR == null) {
+            ASTRAL_ARRAY_FABRICATOR = astralArrayFabricator.get(1);
+        }
         if (aBaseMetaTileEntity.isServerSide()) {
             this.baseMetaTileEntity = aBaseMetaTileEntity;
             this.dimID = getDimID(aBaseMetaTileEntity);
@@ -323,9 +379,9 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
     }
 
     private void checkGravitationalLensInput() {
-        if (mInputBusses.isEmpty()) return;
-        if (getStoredInputs().isEmpty()) return;
-        for (ItemStack items : getStoredInputs()) {
+        ArrayList<ItemStack> storedInputs = getStoredInputs();
+        if (storedInputs.isEmpty()) return;
+        for (ItemStack items : storedInputs) {
             if (metaItemEqual(items, GravitationalLens.get(1))) {
                 gravitationalLensTime += 20L * items.stackSize
                     * DSP_Values.secondsOfEveryGravitationalLensProvideToIntensifyTime;
@@ -354,39 +410,6 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
 
             decreaseGravitationalLensTime();
 
-            if (aTick % 128 == 0) {
-                this.syncDSPData();
-
-                if (mode == 0) {
-                    if (wirelessMode) {
-                        // Generate EU directly
-                        if (this.storageEU > 0) {
-                            addEUToGlobalEnergyMap(ownerUUID.toString(), this.storageEU);
-                            this.storageEU = 0;
-                        }
-                    }
-                } else if (mode == 1) {
-                    // Generate Photon per int.MAX EU
-                    if (storageEU >= EUPerCriticalPhoton) {
-                        int amount = (int) (storageEU / EUPerCriticalPhoton);
-                        if (this.mOutputItems == null) {
-                            ItemStack output = CriticalPhoton.get(1);
-                            output.stackSize = amount;
-                            this.mOutputItems = new ItemStack[] { output };
-                        } else {
-                            // safe and more calculate
-                            for (ItemStack items : this.mOutputItems) {
-                                if (metaItemEqual(items, CriticalPhoton.get(1))) {
-                                    items.stackSize += amount;
-                                }
-                            }
-                            // unsafe, low calculate and enough
-                            // this.mOutputItems[0].stackSize += amount;
-                        }
-                        storageEU -= EUPerCriticalPhoton * amount;
-                    }
-                }
-            }
         }
     }
 
@@ -398,7 +421,8 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
 	public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         repairMachine();
 		if (!checkPiece(STRUCTURE_PIECE_MAIN, horizontalOffSet, verticalOffSet, depthOffSet)) return false;
-        wirelessMode = this.mEnergyHatches.isEmpty() && this.mExoticEnergyHatches.isEmpty();
+//        wirelessMode = this.mEnergyHatches.isEmpty() && this.mExoticEnergyHatches.isEmpty();
+        wirelessMode = true;
         return true;
 	}
 
@@ -458,6 +482,7 @@ public class TST_DSPReceiver extends GTCM_MultiMachineBase<TST_DSPReceiver>
 			                                                 .buildAndChain(IGBlocks.SpaceElevatorCasing, 0)
                                    )
                                    .addElement('Q', ofFrame(Materials.NaquadahAlloy))
+                                   .addElement('R', ofChain(ofBlock(sBlockCasingsTT, 0), ofBlock(GregTech_API.sBlockCasings8, 10)))
                                    .build();
 	}
     /*
@@ -482,7 +507,7 @@ Q -> ofFrame...(NaquadahAlloy, ...);
      */
 	private final String[][] shapeMain = new String[][]{
         {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                       D                       ","                     DD DD                     ","                    D     D                    ","                    D  D  D                    ","                   DDDDKDDDD                   ","                    D  D  D                    ","                    D     D                    ","                     DD DD                     ","                       D                       ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
-        {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                      DDD                      ","                    DDHHHDD                    ","                    DIHIHID                    ","                   DHHIHIHHD                   ","                  CDHIHIHIDDC                  ","                   DHHIHIHHD                   ","                    DIHIHID                    ","                    DDHHHDD                    ","                      DDD                      ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
+        {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                      DDD                      ","                    DDHRHDD                    ","                    DIHIHID                    ","                   DHHIHIHHD                   ","                  CDRIHIHIRDC                  ","                   DHHIHIHHD                   ","                    DIHIHID                    ","                    DDHRHDD                    ","                      DDD                      ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
         {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                     DDDDD                     ","                    DJJJJJD                    ","                   DJJJJJJJD                   ","                  CDJJJJJJJDC                  ","                  CDJJJJJJJDC                  ","                  CDJJJJJJJDC                  ","                   DJJJJJJJD                   ","                    DJJJJJD                    ","                     DDDDD                     ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
         {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                      DDD                      ","                    DDJJJDD                    ","                    DJJJJJD                    ","                  CDJJJJJJJDC                  ","                  CDJJJJJJJDC                  ","                  CDJJJJJJJDC                  ","                    DJJJJJD                    ","                    DDJJJDD                    ","                      DDD                      ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
         {"                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                       D                       ","                     DDJDD                     ","                    DJJJJJD                    ","                  C DJJJJJD C                  ","                   DJJJJJJJD                   ","                  C DJJJJJD C                  ","                    DJJJJJD                    ","                     DDJDD                     ","                       D                       ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               ","                                               "},
@@ -567,6 +592,16 @@ Q -> ofFrame...(NaquadahAlloy, ...);
     }
 
     @Override
+    public boolean supportsBatchMode() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsSingleRecipeLocking() {
+        return false;
+    }
+
+    @Override
     protected GT_Multiblock_Tooltip_Builder createTooltip() {
         final GT_Multiblock_Tooltip_Builder tt = new GT_Multiblock_Tooltip_Builder();
         tt.addMachineType(Tooltip_DSPReceiver_MachineType)
@@ -589,6 +624,8 @@ Q -> ofFrame...(NaquadahAlloy, ...);
             .addStructureInfo(Tooltip_DSPReceiver_02_03)
             .addStructureInfo(Tooltip_DSPReceiver_02_04)
             .addStructureInfo(Tooltip_DSPReceiver_02_05)
+            .addStructureInfo(Tooltip_DSPReceiver_02_07)
+            .addStructureInfo(Tooltip_DSPReceiver_02_08)
             .addStructureInfo(EnumChatFormatting.GOLD + "-----------------------------------------")
             .addStructureInfo(DSPName + ":")
             .addStructureInfo(Tooltip_DSPInfo_launch_01)

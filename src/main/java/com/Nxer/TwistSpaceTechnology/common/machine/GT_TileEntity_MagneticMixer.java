@@ -17,6 +17,7 @@ import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_ASSEMBLY_LINE
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import com.Nxer.TwistSpaceTechnology.common.machine.multiMachineClasses.GTCM_MultiMachineBase;
 import com.Nxer.TwistSpaceTechnology.common.machine.multiMachineClasses.processingLogics.GTCM_ProcessingLogic;
 import com.Nxer.TwistSpaceTechnology.util.TextLocalization;
+import com.Nxer.TwistSpaceTechnology.util.Utils;
 import com.gtnewhorizon.structurelib.structure.IItemSource;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
@@ -58,6 +60,20 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
     // endregion
 
     // region Processing Logic
+    private float speedBonus = 1;
+
+    @Override
+    public void saveNBTData(NBTTagCompound aNBT) {
+        super.saveNBTData(aNBT);
+        aNBT.setFloat("speedBonus", speedBonus);
+    }
+
+    @Override
+    public void loadNBTData(NBTTagCompound aNBT) {
+        super.loadNBTData(aNBT);
+        speedBonus = aNBT.getFloat("speedBonus");
+    }
+
     @Override
     protected ProcessingLogic createProcessingLogic() {
         return new GTCM_ProcessingLogic() {
@@ -81,8 +97,7 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
     }
 
     public float getSpeedBonus() {
-        return (float) Math
-            .pow(SpeedBonus_MultiplyPerTier_MagneticMixer, GT_Utility.getTier(this.getAverageInputVoltage()));
+        return speedBonus;
     }
 
     @Override
@@ -93,7 +108,10 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         repairMachine();
-        return checkPiece(STRUCTURE_PIECE_MAIN, horizontalOffSet, verticalOffSet, depthOffSet);
+        if (!checkPiece(STRUCTURE_PIECE_MAIN, horizontalOffSet, verticalOffSet, depthOffSet)) return false;
+        speedBonus = (float) Math
+            .pow(SpeedBonus_MultiplyPerTier_MagneticMixer, Utils.calculatePowerTier(getMaxInputEu()));
+        return true;
     }
 
     // endregion
@@ -126,6 +144,7 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
     private final int horizontalOffSet = 9;
     private final int verticalOffSet = 19;
     private final int depthOffSet = 0;
+    private static IStructureDefinition<GT_TileEntity_MagneticMixer> STRUCTURE_DEFINITION = null;
 
     /*
      * Blocks:
@@ -137,35 +156,38 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
      */
     @Override
     public IStructureDefinition<GT_TileEntity_MagneticMixer> getStructureDefinition() {
-        return StructureDefinition.<GT_TileEntity_MagneticMixer>builder()
-            .addShape(STRUCTURE_PIECE_MAIN, transpose(shape))
-            .addElement('A', ofBlock(GregTech_API.sBlockCasings2, 8))
-            .addElement(
-                'B',
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
-                    .atLeast(InputBus, OutputBus, InputHatch, OutputHatch)
-                    .adder(GT_TileEntity_MagneticMixer::addToMachineList)
-                    .dot(1)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(2))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 2))
-            .addElement(
-                'C',
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
-                    .atLeast(Energy.or(ExoticEnergy))
-                    .adder(GT_TileEntity_MagneticMixer::addToMachineList)
-                    .dot(2)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(3))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 3))
-            .addElement(
-                'D',
-                GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
-                    .atLeast(Maintenance)
-                    .adder(GT_TileEntity_MagneticMixer::addToMachineList)
-                    .dot(3)
-                    .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(10))
-                    .buildAndChain(GregTech_API.sBlockCasings8, 10))
-            .addElement('E', ofBlock(ModBlocks.blockCasings3Misc, 11))
-            .build();
+        if (STRUCTURE_DEFINITION == null) {
+            STRUCTURE_DEFINITION = StructureDefinition.<GT_TileEntity_MagneticMixer>builder()
+                                                      .addShape(STRUCTURE_PIECE_MAIN, transpose(shape))
+                                                      .addElement('A', ofBlock(GregTech_API.sBlockCasings2, 8))
+                                                      .addElement(
+                                                          'B',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
+                                                                                .atLeast(InputBus, OutputBus, InputHatch, OutputHatch)
+                                                                                .adder(GT_TileEntity_MagneticMixer::addToMachineList)
+                                                                                .dot(1)
+                                                                                .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(2))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings8, 2))
+                                                      .addElement(
+                                                          'C',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
+                                                                                .atLeast(Energy.or(ExoticEnergy))
+                                                                                .adder(GT_TileEntity_MagneticMixer::addToMachineList)
+                                                                                .dot(2)
+                                                                                .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(3))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings8, 3))
+                                                      .addElement(
+                                                          'D',
+                                                          GT_HatchElementBuilder.<GT_TileEntity_MagneticMixer>builder()
+                                                                                .atLeast(Maintenance)
+                                                                                .adder(GT_TileEntity_MagneticMixer::addToMachineList)
+                                                                                .dot(3)
+                                                                                .casingIndex(((GT_Block_Casings8) GregTech_API.sBlockCasings8).getTextureIndex(10))
+                                                                                .buildAndChain(GregTech_API.sBlockCasings8, 10))
+                                                      .addElement('E', ofBlock(ModBlocks.blockCasings3Misc, 11))
+                                                      .build();
+        }
+        return STRUCTURE_DEFINITION;
     }
 
     @Override
@@ -238,41 +260,6 @@ public class GT_TileEntity_MagneticMixer extends GTCM_MultiMachineBase<GT_TileEn
             .addEnergyHatch(TextLocalization.textUseBlueprint, 2)
             .toolTipFinisher(TextLocalization.ModName);
         return tt;
-    }
-
-    @Override
-    public boolean isCorrectMachinePart(ItemStack aStack) {
-        return true;
-    }
-
-    @Override
-    public int getMaxEfficiency(ItemStack aStack) {
-        return 10000;
-    }
-
-    @Override
-    public int getDamageToComponent(ItemStack aStack) {
-        return 0;
-    }
-
-    @Override
-    public boolean explodesOnComponentBreak(ItemStack aStack) {
-        return false;
-    }
-
-    @Override
-    public boolean supportsVoidProtection() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsInputSeparation() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsBatchMode() {
-        return true;
     }
 
     @Override
